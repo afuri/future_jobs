@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>
+        <a class="title-link" href="{{ url_for('index') }}">{{ app_title }}</a>
+      </h1>
+    </header>
+
+    <nav class="top-menu">
+      <form id="filter-form" method="get" action="{{ url_for('index') }}" class="filter-form">
+        <label class="menu-field">
+          <span>Сфера</span>
+          <select name="sphere" id="sphere-select">
+            <option value="">Все сферы</option>
+            {% for item in sphere_options %}
+              <option value="{{ item.value }}" {% if selected_sphere == item.value %}selected{% endif %}>
+                {{ item.label }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="menu-field">
+          <span>Навык</span>
+          <select name="skill" id="skill-select">
+            <option value="">Все навыки</option>
+            {% for item in skill_options %}
+              <option value="{{ item.value }}" {% if selected_skill == item.value %}selected{% endif %}>
+                {{ item.label }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+      </form>
+
+      <div class="menu-links">
+        <a class="menu-link" href="{{ url_for('recommendation') }}">Получить рекомендацию</a>
+        <a class="menu-link" href="{{ url_for('index', view='top') }}">Топ профессий</a>
+        <a class="menu-link" href="{{ url_for('add_job') }}">Добавить профессию</a>
+      </div>
+    </nav>
+
+    <main class="content">
+      {% if back_url or breadcrumbs|length > 1 %}
+        <section class="route-section">
+          <div class="route-bar">
+            {% if back_url %}
+              <a class="back-link" href="{{ back_url }}">← {{ back_label }}</a>
+            {% endif %}
+            <div class="breadcrumbs">
+              {% for crumb in breadcrumbs %}
+                {% if crumb.url %}
+                  <a href="{{ crumb.url }}">{{ crumb.label }}</a>
+                {% else %}
+                  <span>{{ crumb.label }}</span>
+                {% endif %}
+                {% if not loop.last %}
+                  <span class="crumb-sep">/</span>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      {% if show_clusters_section %}
+        <section class="clusters-section">
+          <h2>Кластеры</h2>
+          <div class="cluster-grid">
+            {% for cluster in cluster_cards %}
+              <a
+                class="cluster-card {% if selected_cluster == cluster.name %}active{% endif %}"
+                href="{{ url_for('index', cluster=cluster.name) }}"
+              >
+                <div class="cluster-logo">
+                  <img
+                    class="cluster-logo-img"
+                    src="{{ url_for('static', filename=cluster.logo) }}"
+                    alt="Логотип кластера {{ cluster.name }}"
+                  />
+                </div>
+                <div class="cluster-text">
+                  <div class="cluster-name">{{ cluster.name }}</div>
+                  <p class="cluster-desc">{{ cluster.description }}</p>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      {% if show_spheres_section and sphere_cards %}
+        <section class="spheres-section">
+          <h2>Сферы кластера: {{ selected_cluster }}</h2>
+          <div class="sphere-grid">
+            {% for sphere in sphere_cards %}
+              <a
+                class="sphere-card {% if selected_sphere == sphere.value %}active{% endif %}"
+                href="{{ url_for('index', cluster=selected_cluster, sphere=sphere.value, skill=selected_skill) }}"
+              >
+                {{ sphere.label }}
+              </a>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      {% if jobs %}
+        <section class="jobs-section">
+          <h2>{{ result_title }}</h2>
+
+          <ul class="jobs-list">
+            {% for job in jobs %}
+              <li>
+                {% if open_job_id == job.id %}
+                  {% if view_mode == 'top' %}
+                    <a
+                      class="job-title open"
+                      href="{{ url_for('index', view=view_mode, top_ids=top_ids_param) }}"
+                    >
+                      {{ job.title }}
+                    </a>
+                  {% else %}
+                    <a
+                      class="job-title open"
+                      href="{{ url_for('index', cluster=selected_cluster, sphere=selected_sphere, skill=selected_skill, view=view_mode) }}"
+                    >
+                      {{ job.title }}
+                    </a>
+                  {% endif %}
+                {% else %}
+                  {% if view_mode == 'top' %}
+                    <a
+                      class="job-title"
+                      href="{{ url_for('index', view=view_mode, top_ids=top_ids_param, open=job.id) }}"
+                    >
+                      {{ job.title }}
+                    </a>
+                  {% else %}
+                    <a
+                      class="job-title"
+                      href="{{ url_for('index', cluster=selected_cluster, sphere=selected_sphere, skill=selected_skill, view=view_mode, open=job.id) }}"
+                    >
+                      {{ job.title }}
+                    </a>
+                  {% endif %}
+                {% endif %}
+
+                {% if open_job_id == job.id %}
+                  <article class="job-card">
+                    <div class="job-row"><strong>Тип деятельности:</strong> {{ job.activity | join(', ') }}</div>
+                    <div class="job-row"><strong>Ключевые навыки:</strong> {{ job.skills | join(', ') }}</div>
+                    <div class="job-row"><strong>Почему появится:</strong> {{ job.why_future }}</div>
+                    <div class="job-row"><strong>Типичные задачи:</strong> {{ job.tasks | join('; ') }}</div>
+                    <div class="job-row"><strong>Уровень математики:</strong> {{ job.math_level }}</div>
+                    <div class="job-row"><strong>Уровень коммуникации:</strong> {{ job.communication_level }}</div>
+                    <form class="like-form" method="post" action="{{ url_for('like_job', job_id=job.id) }}">
+                      <input type="hidden" name="cluster" value="{{ selected_cluster or '' }}" />
+                      <input type="hidden" name="sphere" value="{{ selected_sphere or '' }}" />
+                      <input type="hidden" name="skill" value="{{ selected_skill or '' }}" />
+                      <input type="hidden" name="view" value="{{ view_mode or '' }}" />
+                      <input type="hidden" name="open" value="{{ job.id }}" />
+                      <input type="hidden" name="top_ids" value="{{ top_ids_param or '' }}" />
+                      <button
+                        class="like-button {% if job.id in liked_job_ids %}liked{% endif %}"
+                        type="submit"
+                        title="Поставить лайк"
+                        aria-label="Поставить лайк"
+                      >
+                        <span class="heart">{% if job.id in liked_job_ids %}♥{% else %}♡{% endif %}</span>
+                        <span class="likes-count">{{ job.rate }}</span>
+                      </button>
+                    </form>
+                  </article>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% elif selected_sphere or selected_skill or view_mode == 'top' %}
+        <section class="jobs-section">
+          <h2>{{ result_title }}</h2>
+          <p class="empty-note">По выбранным критериям профессий не найдено.</p>
+        </section>
+      {% endif %}
+    </main>
+
+    <footer class="site-footer">Санкт-Петербург          2026          Web-студия "<a class="footer-link" href="{{ url_for('internship_review') }}">4udesa.studio</a>"</footer>
+
+    <script>
+      const sphereSelect = document.getElementById("sphere-select");
+      const skillSelect = document.getElementById("skill-select");
+      const filterForm = document.getElementById("filter-form");
+
+      sphereSelect.addEventListener("change", () => filterForm.submit());
+      skillSelect.addEventListener("change", () => filterForm.submit());
+    </script>
+  </body>
+</html>

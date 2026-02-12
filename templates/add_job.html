@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_title }} • Добавить профессию</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>
+        <a class="title-link" href="{{ url_for('index') }}">{{ app_title }}</a>
+      </h1>
+    </header>
+
+    <nav class="top-menu recommendation-menu">
+      <div class="menu-links menu-links-wide">
+        <a class="menu-link" href="{{ url_for('index') }}">Каталог</a>
+        <a class="menu-link" href="{{ url_for('recommendation') }}">Получить рекомендацию</a>
+        <a class="menu-link" href="{{ url_for('index', view='top') }}">Топ профессий</a>
+        <a class="menu-link active" href="{{ url_for('add_job') }}">Добавить профессию</a>
+      </div>
+    </nav>
+
+    <main class="content">
+      <section class="route-section">
+        <div class="route-bar">
+          <a class="back-link" href="{{ url_for('index') }}">← Назад в каталог</a>
+          <div class="breadcrumbs">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <span class="crumb-sep">/</span>
+            <span>Добавить профессию</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="add-job-section">
+        <h2>Добавить профессию</h2>
+        <p class="add-job-note">Заполните форму. Поля «Название», «Сфера» и «Навыки» обязательны.</p>
+
+        {% if errors %}
+          <ul class="error-list">
+            {% for error in errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('add_job') }}" class="add-job-form">
+          <label class="menu-field">
+            <span>Название профессии</span>
+            <input
+              type="text"
+              name="title"
+              value="{{ form_data.title }}"
+              placeholder="Например: Архитектор цифровых экосистем"
+              maxlength="180"
+            />
+          </label>
+
+          <label class="menu-field">
+            <span>Сфера (из списка)</span>
+            <select name="sphere_selected">
+              <option value="">Выберите сферу</option>
+              {% for item in sphere_options %}
+                <option value="{{ item.value }}" {% if form_data.sphere_selected == item.value %}selected{% endif %}>
+                  {{ item.label }}
+                </option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="menu-field">
+            <span>Своя сфера (опционально)</span>
+            <input
+              type="text"
+              name="sphere_custom"
+              value="{{ form_data.sphere_custom }}"
+              placeholder="Например: Квантовые коммуникации"
+            />
+          </label>
+
+          <label class="menu-field">
+            <span>Навыки (из списка, можно выбрать несколько)</span>
+            <select name="skills_selected" class="multi-select" multiple size="12">
+              {% for item in skill_options %}
+                <option value="{{ item.value }}" {% if item.value in form_data.skills_selected %}selected{% endif %}>
+                  {{ item.label }}
+                </option>
+              {% endfor %}
+            </select>
+            <small class="input-hint">Для выбора нескольких навыков удерживайте Ctrl/Cmd.</small>
+          </label>
+
+          <label class="menu-field">
+            <span>Свои навыки (опционально)</span>
+            <textarea
+              name="skills_custom"
+              rows="4"
+              placeholder="Введите навыки через запятую или с новой строки"
+            >{{ form_data.skills_custom }}</textarea>
+          </label>
+
+          <label class="menu-field">
+            <span>Почему может появиться? (опционально)</span>
+            <textarea
+              name="why_future"
+              rows="4"
+              placeholder="Кратко опишите причины появления профессии"
+            >{{ form_data.why_future }}</textarea>
+          </label>
+
+          <label class="menu-field">
+            <span>Что будет делать? (опционально)</span>
+            <textarea
+              name="tasks_text"
+              rows="4"
+              placeholder="Укажите задачи через запятую или с новой строки"
+            >{{ form_data.tasks_text }}</textarea>
+          </label>
+
+          <div class="add-job-actions">
+            <button class="quiz-submit" type="submit">Сохранить профессию</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">Санкт-Петербург          2026          Web-студия "<a class="footer-link" href="{{ url_for('internship_review') }}">4udesa.studio</a>"</footer>
+
+    {% if is_saved %}
+      <div class="modal-backdrop" id="saved-modal" role="dialog" aria-modal="true" aria-labelledby="saved-modal-title">
+        <div class="modal-window">
+          <h3 id="saved-modal-title">Сохранено</h3>
+          <p>Новая профессия успешно сохранена. Будет добавлена в общий список после проверки модератором.</p>
+          <button id="saved-modal-close" class="quiz-submit modal-close-button" type="button">Понятно</button>
+        </div>
+      </div>
+      <script>
+        const savedModal = document.getElementById("saved-modal");
+        const savedModalClose = document.getElementById("saved-modal-close");
+
+        const closeSavedModal = () => {
+          if (!savedModal) return;
+          savedModal.classList.add("hidden");
+          const params = new URLSearchParams(window.location.search);
+          params.delete("saved");
+          const query = params.toString();
+          const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
+          window.history.replaceState({}, "", nextUrl);
+        };
+
+        savedModalClose.addEventListener("click", closeSavedModal);
+        savedModal.addEventListener("click", (event) => {
+          if (event.target === savedModal) closeSavedModal();
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closeSavedModal();
+        });
+      </script>
+    {% endif %}
+  </body>
+</html>

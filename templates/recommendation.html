@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_title }} • Рекомендательный тест</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>
+        <a class="title-link" href="{{ url_for('index') }}">{{ app_title }}</a>
+      </h1>
+    </header>
+
+    <nav class="top-menu recommendation-menu">
+      <div class="menu-links menu-links-wide">
+        <a class="menu-link" href="{{ url_for('index') }}">Каталог</a>
+        <a class="menu-link active" href="{{ url_for('recommendation') }}">Получить рекомендацию</a>
+        <a class="menu-link" href="{{ url_for('index', view='top') }}">Топ профессий</a>
+        <a class="menu-link" href="{{ url_for('add_job') }}">Добавить профессию</a>
+      </div>
+    </nav>
+
+    <main class="content">
+      <section class="route-section">
+        <div class="route-bar">
+          <a class="back-link" href="{{ url_for('index') }}">← Назад в каталог</a>
+          <div class="breadcrumbs">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <span class="crumb-sep">/</span>
+            <span>Рекомендательный тест</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="recommendation-intro">
+        <h2>Рекомендательный тест</h2>
+        <p>Ответьте на 7 вопросов, чтобы получить персональный список из 10 профессий.</p>
+      </section>
+
+      {% if not recommendations_ready %}
+        <section class="quiz-section">
+          <form method="post" action="{{ url_for('recommendation') }}" class="quiz-form quiz-form-sequential" id="recommendation-quiz-form">
+            <p class="quiz-progress" id="quiz-progress" aria-live="polite"></p>
+
+            {% for question in questions %}
+              <div class="question-card {% if not loop.first %}hidden-step{% endif %}" data-step="{{ loop.index0 }}">
+                <h3 class="question-title">{{ loop.index }}. {{ question.text }}</h3>
+                <div class="options-list">
+                  {% for code, option_text in question.options.items() %}
+                    <label class="option-item">
+                      <input
+                        type="radio"
+                        name="{{ question.id }}"
+                        value="{{ code }}"
+                        {% if answers.get(question.id) == code %}checked{% endif %}
+                      />
+                      <span><strong>{{ code }}</strong> — {{ option_text }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+
+            {% if validation_error %}
+              <p class="error-note">{{ validation_error }}</p>
+            {% endif %}
+
+            <button class="quiz-submit hidden" id="recommend-submit" type="submit">Показать рекомендации</button>
+          </form>
+        </section>
+      {% endif %}
+
+      {% if recommendations_ready %}
+        <section class="recommendation-results">
+          <h2>ТОП-3 профессии</h2>
+          <div class="recommendation-list">
+            {% for job in top_jobs %}
+              <article class="recommendation-card top">
+                <div class="recommendation-head">
+                  <h3>{{ loop.index }}. {{ job.title }}</h3>
+                  <span class="score-badge">Баллы: {{ job.score }}</span>
+                </div>
+                <div class="recommendation-explain">
+                  <p><strong>Почему подходит:</strong> совпадения по кластеру, активности и навыкам.</p>
+                  <p><strong>Совпавшие кластеры:</strong> {{ job.matched_clusters | join(', ') if job.matched_clusters else 'Нет явных совпадений' }}</p>
+                  <p><strong>Совпавшие активности:</strong> {{ job.matched_activities | join(', ') if job.matched_activities else 'Нет явных совпадений' }}</p>
+                  <p><strong>Совпавшие навыки:</strong> {{ job.matched_skills | join(', ') if job.matched_skills else 'Нет явных совпадений' }}</p>
+                  <p><strong>Навыки для развития:</strong> {{ job.development_skills | join(', ') if job.development_skills else 'Профиль навыков уже хорошо совпадает' }}</p>
+                </div>
+                <details class="job-details">
+                  <summary>Подробнее о профессии</summary>
+                  <div class="job-card recommendation-job-card">
+                    <div class="job-row"><strong>Тип деятельности:</strong> {{ job.activity | join(', ') }}</div>
+                    <div class="job-row"><strong>Ключевые навыки:</strong> {{ job.skills | join(', ') }}</div>
+                    <div class="job-row"><strong>Почему появится:</strong> {{ job.why_future }}</div>
+                    <div class="job-row"><strong>Типичные задачи:</strong> {{ job.tasks | join('; ') }}</div>
+                    <div class="job-row"><strong>Уровень математики:</strong> {{ job.math_level }}</div>
+                    <div class="job-row"><strong>Уровень коммуникации:</strong> {{ job.communication_level }}</div>
+                  </div>
+                </details>
+              </article>
+            {% endfor %}
+          </div>
+
+          <h2 class="additional-title">Ещё 7 профессий</h2>
+          <div class="recommendation-list">
+            {% for job in additional_jobs %}
+              <article class="recommendation-card">
+                <div class="recommendation-head">
+                  <h3>{{ loop.index + 3 }}. {{ job.title }}</h3>
+                  <span class="score-badge">Баллы: {{ job.score }}</span>
+                </div>
+                <div class="recommendation-explain">
+                  <p><strong>Совпавшие активности:</strong> {{ job.matched_activities | join(', ') if job.matched_activities else 'Нет явных совпадений' }}</p>
+                  <p><strong>Совпавшие навыки:</strong> {{ job.matched_skills | join(', ') if job.matched_skills else 'Нет явных совпадений' }}</p>
+                  <p><strong>Навыки для развития:</strong> {{ job.development_skills | join(', ') if job.development_skills else 'Профиль навыков уже хорошо совпадает' }}</p>
+                </div>
+                <details class="job-details">
+                  <summary>Подробнее о профессии</summary>
+                  <div class="job-card recommendation-job-card">
+                    <div class="job-row"><strong>Тип деятельности:</strong> {{ job.activity | join(', ') }}</div>
+                    <div class="job-row"><strong>Ключевые навыки:</strong> {{ job.skills | join(', ') }}</div>
+                    <div class="job-row"><strong>Почему появится:</strong> {{ job.why_future }}</div>
+                    <div class="job-row"><strong>Типичные задачи:</strong> {{ job.tasks | join('; ') }}</div>
+                    <div class="job-row"><strong>Уровень математики:</strong> {{ job.math_level }}</div>
+                    <div class="job-row"><strong>Уровень коммуникации:</strong> {{ job.communication_level }}</div>
+                  </div>
+                </details>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    </main>
+
+    <footer class="site-footer">Санкт-Петербург          2026          Web-студия "<a class="footer-link" href="{{ url_for('internship_review') }}">4udesa.studio</a>"</footer>
+
+    {% if not recommendations_ready %}
+      <script>
+        const quizForm = document.getElementById("recommendation-quiz-form");
+        const submitButton = document.getElementById("recommend-submit");
+        const progressNode = document.getElementById("quiz-progress");
+
+        if (quizForm && submitButton && progressNode) {
+          const questionCards = Array.from(quizForm.querySelectorAll(".question-card"));
+
+          const getCheckedInput = (card) => card.querySelector('input[type="radio"]:checked');
+          const isAllAnswered = () => questionCards.every((card) => Boolean(getCheckedInput(card)));
+
+          const getInitialVisibleCount = () => {
+            let count = 1;
+            for (let i = 0; i < questionCards.length; i += 1) {
+              if (getCheckedInput(questionCards[i])) {
+                count = Math.min(i + 2, questionCards.length);
+              } else {
+                break;
+              }
+            }
+            return count;
+          };
+
+          let visibleCount = getInitialVisibleCount();
+
+          const refreshView = () => {
+            questionCards.forEach((card, index) => {
+              card.classList.toggle("hidden-step", index >= visibleCount);
+            });
+            const activeQuestion = Math.min(visibleCount, questionCards.length);
+            progressNode.textContent = `Вопрос ${activeQuestion} из ${questionCards.length}`;
+            submitButton.classList.toggle("hidden", !isAllAnswered());
+          };
+
+          questionCards.forEach((card, index) => {
+            const inputs = card.querySelectorAll('input[type="radio"]');
+            inputs.forEach((input) => {
+              input.addEventListener("change", () => {
+                if (index + 1 === visibleCount && visibleCount < questionCards.length) {
+                  visibleCount += 1;
+                }
+                refreshView();
+              });
+            });
+          });
+
+          quizForm.addEventListener("submit", (event) => {
+            if (isAllAnswered()) {
+              return;
+            }
+            event.preventDefault();
+            const firstUnansweredIndex = questionCards.findIndex((card) => !getCheckedInput(card));
+            visibleCount = Math.max(1, firstUnansweredIndex + 1);
+            refreshView();
+          });
+
+          refreshView();
+        }
+      </script>
+    {% endif %}
+  </body>
+</html>

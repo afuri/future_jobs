@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "title": "Придурок",
+    "sphere": [
+      "AI"
+    ],
+    "skills": [
+      "inspection_skills"
+    ],
+    "why_future": "",
+    "tasks": []
+  }
+]

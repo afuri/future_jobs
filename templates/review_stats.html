@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_title }} • Гистограммы отзывов</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>
+        <a class="title-link" href="{{ url_for('index') }}">{{ app_title }}</a>
+      </h1>
+    </header>
+
+    <main class="content">
+      <section class="route-section">
+        <div class="route-bar">
+          <a class="back-link" href="{{ url_for('index') }}">← Назад в каталог</a>
+          <div class="breadcrumbs">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <span class="crumb-sep">/</span>
+            <span>Гистограммы отзывов</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="review-stats-section">
+        <h2>Результаты отзывов</h2>
+        <p class="review-stats-note">Всего отзывов: {{ total_reviews }}</p>
+
+        {% if total_reviews == 0 %}
+          <p class="empty-note">Пока нет данных для построения гистограмм.</p>
+        {% endif %}
+
+        <div class="histogram-list">
+          {% for histogram in histograms %}
+            <article class="histogram-card">
+              <h3>{{ loop.index }}. {{ histogram.question }}</h3>
+              <div class="histogram-bars">
+                {% for bar in histogram.bars %}
+                  <div class="histogram-row">
+                    <div class="histogram-label">{{ bar.value }} — {{ bar.label }}</div>
+                    <div class="histogram-track">
+                      <div class="histogram-fill" style="width: {{ bar.percent }}%;"></div>
+                    </div>
+                    <div class="histogram-value">{{ bar.count }} ({{ bar.percent }}%)</div>
+                  </div>
+                {% endfor %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">Санкт-Петербург          2026          Web-студия "<a class="footer-link" href="{{ url_for('internship_review') }}">4udesa.studio</a>"</footer>
+  </body>
+</html>

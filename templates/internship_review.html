@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_title }} • Отзыв о стажировке</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>
+        <a class="title-link" href="{{ url_for('index') }}">{{ app_title }}</a>
+      </h1>
+    </header>
+
+    <nav class="top-menu recommendation-menu">
+      <div class="menu-links menu-links-wide">
+        <a class="menu-link" href="{{ url_for('index') }}">Каталог</a>
+        <a class="menu-link" href="{{ url_for('recommendation') }}">Получить рекомендацию</a>
+        <a class="menu-link" href="{{ url_for('index', view='top') }}">Топ профессий</a>
+        <a class="menu-link" href="{{ url_for('add_job') }}">Добавить профессию</a>
+      </div>
+    </nav>
+
+    <main class="content">
+      <section class="route-section">
+        <div class="route-bar">
+          <a class="back-link" href="{{ url_for('index') }}">← Назад в каталог</a>
+          <div class="breadcrumbs">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <span class="crumb-sep">/</span>
+            <span>Отзыв о стажировке</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="review-section">
+        <h2>Отзыв о стажировке</h2>
+        {% if success_message %}
+          <p class="success-note">{{ success_message }}</p>
+        {% endif %}
+
+        {% if errors %}
+          <ul class="error-list">
+            {% for error in errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        <form class="review-form" method="post" action="{{ url_for('internship_review') }}">
+          {% for question in questions %}
+            <div class="review-question">
+              <h3 class="review-question-title">{{ question.text }}</h3>
+              <div class="rating-scale">
+                {% for mark in rating_scale %}
+                  <label class="rating-option">
+                    <input
+                      type="radio"
+                      name="{{ question.id }}"
+                      value="{{ mark.value }}"
+                      {% if selected_values.get(question.id) == mark.value %}checked{% endif %}
+                      {% if submitted_in_session %}disabled{% endif %}
+                    />
+                    <span class="mark-label">{{ mark.label }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+
+          <div class="review-actions">
+            <button class="quiz-submit review-submit" type="submit" {% if submitted_in_session %}disabled{% endif %}>
+              Оправить отзыв
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">Санкт-Петербург          2026          Web-студия "<a class="footer-link" href="{{ url_for('internship_review') }}">4udesa.studio</a>"</footer>
+  </body>
+</html>
