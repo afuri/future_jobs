@@ -40,7 +40,7 @@ def get_top_jobs(jobs: list[dict], top_k: int = 10) -> list[dict]:
 
         selected.extend(random.sample(group, remaining_slots))
         break
-
+    
     return selected
 
 
