@@ -8,9 +8,12 @@
   </head>
   <body>
     <header class="site-header">
-      <h1>
-        <a class="title-link" href="{{ url_for('index') }}">{{ app_title }}</a>
-      </h1>
+      <a class="title-link" href="{{ url_for('index') }}">
+        <div class="header-brand">
+          <img class="site-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ app_title }}" />
+          <span class="header-brand-text">Каталог новых профессий*</span>
+        </div>
+      </a>
     </header>
 
     <nav class="top-menu recommendation-menu">
@@ -74,7 +77,17 @@
 
       {% if recommendations_ready %}
         <section class="recommendation-results">
-          <h2>ТОП-3 профессии</h2>
+          <div class="jobs-header">
+            <h2>ТОП-3 профессии</h2>
+            {% if recommendation_ids %}
+              <a
+                class="pdf-download-link"
+                href="{{ url_for('download_jobs_pdf', ids=recommendation_ids, source='recommendation') }}"
+              >
+                Скачать PDF
+              </a>
+            {% endif %}
+          </div>
           <div class="recommendation-list">
             {% for job in top_jobs %}
               <article class="recommendation-card top">

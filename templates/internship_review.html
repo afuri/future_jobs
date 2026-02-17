@@ -8,9 +8,12 @@
   </head>
   <body>
     <header class="site-header">
-      <h1>
-        <a class="title-link" href="{{ url_for('index') }}">{{ app_title }}</a>
-      </h1>
+      <a class="title-link" href="{{ url_for('index') }}">
+        <div class="header-brand">
+          <img class="site-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ app_title }}" />
+          <span class="header-brand-text">Каталог новых профессий*</span>
+        </div>
+      </a>
     </header>
 
     <nav class="top-menu recommendation-menu">
@@ -53,18 +56,22 @@
             <div class="review-question">
               <h3 class="review-question-title">{{ question.text }}</h3>
               <div class="rating-scale">
-                {% for mark in rating_scale %}
-                  <label class="rating-option">
-                    <input
-                      type="radio"
-                      name="{{ question.id }}"
-                      value="{{ mark.value }}"
-                      {% if selected_values.get(question.id) == mark.value %}checked{% endif %}
-                      {% if submitted_in_session %}disabled{% endif %}
-                    />
-                    <span class="mark-label">{{ mark.label }}</span>
-                  </label>
-                {% endfor %}
+                <div class="rating-stars" data-disabled="{% if submitted_in_session %}1{% else %}0{% endif %}">
+                  <input
+                    type="hidden"
+                    name="{{ question.id }}"
+                    value="{{ selected_values.get(question.id, '') }}"
+                  />
+                  {% for value in [1, 2, 3, 4, 5] %}
+                    <button
+                      type="button"
+                      class="star-btn"
+                      data-value="{{ value }}"
+                      title="Оценка {{ value }}"
+                      aria-label="Оценка {{ value }}"
+                    >★</button>
+                  {% endfor %}
+                </div>
               </div>
             </div>
           {% endfor %}
@@ -78,6 +85,48 @@
       </section>
     </main>
 
+    {% if success_message %}
+      <div class="modal-backdrop review-complete-modal">
+        <div class="modal-window">
+          <h3>Поздравляем!</h3>
+          <p>Вы успешно завершили стажировку.<br />Хотите отправить отзыв еще раз</p>
+          <div class="review-modal-actions">
+            <a class="menu-link" href="{{ url_for('internship_review', again='1') }}">Да</a>
+            <a class="menu-link" href="{{ url_for('index') }}">Нет</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
     <footer class="site-footer">Санкт-Петербург          2026          Web-студия "<a class="footer-link" href="{{ url_for('internship_review') }}">4udesa.studio</a>"</footer>
+    <script>
+      const starGroups = document.querySelectorAll(".rating-stars");
+
+      starGroups.forEach((group) => {
+        const hiddenInput = group.querySelector('input[type="hidden"]');
+        const buttons = Array.from(group.querySelectorAll("button.star-btn"));
+        const isDisabled = group.dataset.disabled === "1";
+
+        const paintSelected = () => {
+          const selectedValue = hiddenInput ? Number(hiddenInput.value || 0) : 0;
+          buttons.forEach((button) => {
+            const value = Number(button.dataset.value || 0);
+            button.classList.toggle("is-selected", value <= selectedValue);
+          });
+        };
+
+        buttons.forEach((button) => {
+          button.addEventListener("click", () => {
+            if (isDisabled || !hiddenInput) {
+              return;
+            }
+            hiddenInput.value = String(Number(button.dataset.value || 0));
+            paintSelected();
+          });
+        });
+
+        paintSelected();
+      });
+    </script>
   </body>
 </html>

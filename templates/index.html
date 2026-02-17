@@ -8,9 +8,12 @@
   </head>
   <body>
     <header class="site-header">
-      <h1>
-        <a class="title-link" href="{{ url_for('index') }}">{{ app_title }}</a>
-      </h1>
+      <a class="title-link" href="{{ url_for('index') }}">
+        <div class="header-brand">
+          <img class="site-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ app_title }}" />
+          <span class="header-brand-text">Каталог новых профессий*</span>
+        </div>
+      </a>
     </header>
 
     <nav class="top-menu">
@@ -114,7 +117,17 @@
 
       {% if jobs %}
         <section class="jobs-section">
-          <h2>{{ result_title }}</h2>
+          <div class="jobs-header">
+            <h2>{{ result_title }}</h2>
+            {% if can_download_top_pdf %}
+              <a
+                class="pdf-download-link"
+                href="{{ url_for('download_jobs_pdf', ids=top_ids_param, source='top') }}"
+              >
+                Скачать PDF
+              </a>
+            {% endif %}
+          </div>
 
           <ul class="jobs-list">
             {% for job in jobs %}
@@ -171,8 +184,8 @@
                       <button
                         class="like-button {% if job.id in liked_job_ids %}liked{% endif %}"
                         type="submit"
-                        title="Поставить лайк"
-                        aria-label="Поставить лайк"
+                        title="{% if job.id in liked_job_ids %}Убрать лайк{% else %}Поставить лайк{% endif %}"
+                        aria-label="{% if job.id in liked_job_ids %}Убрать лайк{% else %}Поставить лайк{% endif %}"
                       >
                         <span class="heart">{% if job.id in liked_job_ids %}♥{% else %}♡{% endif %}</span>
                         <span class="likes-count">{{ job.rate }}</span>
@@ -192,7 +205,7 @@
       {% endif %}
     </main>
 
-    <footer class="site-footer">Санкт-Петербург          2026          Web-студия "<a class="footer-link" href="{{ url_for('internship_review') }}">4udesa.studio</a>"</footer>
+    <footer class="site-footer">* Внимание: профессии являются примерными и не гарантируют точный прогноз будущего. </br> Санкт-Петербург          2026          Web-студия "<a class="footer-link" href="{{ url_for('internship_review') }}">4udesa.studio</a>"</footer>
 
     <script>
       const sphereSelect = document.getElementById("sphere-select");

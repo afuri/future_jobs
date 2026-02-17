@@ -1,4 +1,4 @@
-"""Инкремент значения rate у профессии в JSON-файле."""
+"""Декремент значения rate у профессии в JSON-файле."""
 
 from __future__ import annotations
 
@@ -9,10 +9,11 @@ from threading import Lock
 _FILE_LOCK = Lock()
 
 
-
-def increment_job_rate_in_file(file_path: str, job_id: int) -> bool:
+def decrement_job_rate_in_file(file_path: str, job_id: int) -> bool:
     """
-    Увеличивает значение `rate` у профессии по `job_id` на 1.
+    Уменьшает значение `rate` у профессии по `job_id` на 1.
+
+    Значение `rate` не опускается ниже нуля.
 
     Args:
         file_path (str): Путь до JSON-файла с профессиями.
@@ -30,7 +31,7 @@ def increment_job_rate_in_file(file_path: str, job_id: int) -> bool:
         for job in jobs_data:
             if int(job.get("id", 0)) == int(job_id):
                 current_rate = int(job.get("rate", 0))
-                job["rate"] = current_rate + 10
+                job["rate"] = max(0, current_rate - 1)
                 was_updated = True
                 break
 
@@ -48,11 +49,11 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 3:
         print(
-            "Использование: python services/increment_job_rate_in_file.py "
+            "Использование: python services/decrement_job_rate_in_file.py "
             "<file_path> <job_id>"
         )
     else:
         file_arg = sys.argv[1]
         job_id_arg = int(sys.argv[2])
-        result = increment_job_rate_in_file(file_arg, job_id_arg)
+        result = decrement_job_rate_in_file(file_arg, job_id_arg)
         print(f"Обновлено: {result}")

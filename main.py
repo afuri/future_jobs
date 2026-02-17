@@ -3,11 +3,22 @@
 from __future__ import annotations
 
 import os
+from io import BytesIO
 from pathlib import Path
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import (
+    Flask,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
 
+from services.build_jobs_pdf_bytes import build_jobs_pdf_bytes
 from services.build_recommendation_profile import build_recommendation_profile
+from services.decrement_job_rate_in_file import decrement_job_rate_in_file
 from services.filter_jobs import filter_jobs
 from services.get_clusters_overview import get_clusters_overview
 from services.get_filter_options import get_filter_options
@@ -34,7 +45,7 @@ APP_TITLE = "Каталог Профессий Будущего"
 INTERNSHIP_REVIEW_QUESTIONS = [
     "Я понял принцип модульного построения программ",
     "Мне понравилось работать над web-приложением",
-    "Я положу данный проект а свое портфолио",
+    "Я добавлю данный проект в портфолио",
 ]
 
 INTERNSHIP_REVIEW_SCALE = [
@@ -240,7 +251,13 @@ def index() -> str:
     )
 
     spheres_for_cluster = (
-        get_spheres_for_cluster(jobs_data, selected_cluster) if selected_cluster else []
+        get_spheres_for_cluster(
+            jobs_data,
+            selected_cluster,
+            str(BASE_DIR / "clusters.md"),
+        )
+        if selected_cluster
+        else []
     )
     sphere_cards = [
         {
@@ -396,6 +413,7 @@ def index() -> str:
         breadcrumbs=breadcrumbs,
         back_url=back_url,
         back_label=back_label,
+        can_download_top_pdf=(view_mode == "top" and bool(translated_jobs)),
     )
 
 
@@ -451,6 +469,65 @@ def recommendation() -> str:
         top_jobs=top_jobs,
         additional_jobs=additional_jobs,
         recommendations_ready=recommendations_ready,
+        recommendation_ids=",".join(
+            str(int(job.get("id", 0)))
+            for job in [*top_jobs, *additional_jobs]
+            if int(job.get("id", 0)) > 0
+        ),
+    )
+
+
+@app.get("/download-jobs-pdf")
+def download_jobs_pdf():
+    """
+    Возвращает PDF-файл со списком выбранных профессий.
+
+    Args:
+        Нет.
+
+    Returns:
+        Response: Файл PDF для скачивания.
+    """
+    raw_ids = request.args.get("ids", "").strip()
+    source = request.args.get("source", "").strip()
+
+    job_ids: list[int] = []
+    for value in raw_ids.split(","):
+        value = value.strip()
+        if value.isdigit():
+            job_id = int(value)
+            if job_id > 0:
+                job_ids.append(job_id)
+
+    if not job_ids:
+        return redirect(url_for("index"))
+
+    jobs_data = load_json_data(str(JOBS_PATH))
+    description_data = load_json_data(str(DESCRIPTION_PATH))
+    jobs_by_id = {int(job.get("id", 0)): job for job in jobs_data}
+    selected_jobs = [jobs_by_id[job_id] for job_id in job_ids if job_id in jobs_by_id]
+
+    if not selected_jobs:
+        return redirect(url_for("index"))
+
+    translated_jobs = [
+        translate_job_card(job, description_data)
+        for job in selected_jobs
+    ]
+
+    if source == "recommendation":
+        document_title = "Профессии по результатам рекомендательного теста"
+        filename = "recommendations.pdf"
+    else:
+        document_title = "Топ-10 профессий"
+        filename = "top-10-jobs.pdf"
+
+    pdf_bytes = build_jobs_pdf_bytes(translated_jobs, document_title=document_title)
+    return send_file(
+        BytesIO(pdf_bytes),
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/pdf",
     )
 
 
@@ -564,6 +641,10 @@ def internship_review() -> str:
     Returns:
         str: HTML-страница с вопросами и шкалой оценок.
     """
+    if request.args.get("again", "").strip() == "1":
+        session.pop("internship_review_submitted", None)
+        return redirect(url_for("internship_review"))
+
     review_questions = [
         {"id": f"q{index}", "text": question}
         for index, question in enumerate(INTERNSHIP_REVIEW_QUESTIONS, start=1)
@@ -657,7 +738,12 @@ def like_job(job_id: int):
         Response: Редирект обратно на текущий экран каталога.
     """
     liked_job_ids = parse_liked_job_ids(session.get("liked_jobs", []))
-    if job_id not in liked_job_ids:
+    if job_id in liked_job_ids:
+        was_updated = decrement_job_rate_in_file(str(JOBS_PATH), job_id)
+        if was_updated:
+            liked_job_ids.discard(job_id)
+            session["liked_jobs"] = sorted(liked_job_ids)
+    else:
         was_updated = increment_job_rate_in_file(str(JOBS_PATH), job_id)
         if was_updated:
             liked_job_ids.add(job_id)

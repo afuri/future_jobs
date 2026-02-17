@@ -28,25 +28,49 @@ body {
 
 .site-header {
   text-align: center;
-  padding: 24px 16px 14px;
+  height: 100px;
+  padding: 8px 16px;
   background: linear-gradient(90deg, #1d5fd2 0%, #2f7cf0 60%, #1d5fd2 100%);
   color: #f3f8ff;
   border-bottom: 3px solid #184ca8;
-}
-
-.site-header h1 {
-  margin: 0;
-  letter-spacing: 0.04em;
-  font-size: clamp(1.35rem, 2vw, 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .title-link {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
   color: inherit;
   text-decoration: none;
+  max-height: 100%;
 }
 
 .title-link:hover {
-  text-decoration: underline;
+  text-decoration: none;
+}
+
+.header-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-height: 84px;
+}
+
+.header-brand-text {
+  font-size: clamp(1rem, 2.2vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.site-logo {
+  width: min(300px, 16vw);
+  height: auto;
+  display: block;
 }
 
 .top-menu {
@@ -279,6 +303,38 @@ section h2 {
 
 .jobs-section {
   margin-top: 24px;
+}
+
+.jobs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.jobs-header h2 {
+  margin: 0;
+}
+
+.pdf-download-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #b8cdf0;
+  color: #1c4f9c;
+  background: var(--accent-light);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pdf-download-link:hover {
+  background: #d5e6ff;
 }
 
 .jobs-list {
@@ -672,7 +728,7 @@ section h2 {
   border-radius: 12px;
   background: var(--panel);
   box-shadow: var(--shadow);
-  min-height: 245px;
+  min-height: 147px;
   padding: 28px 14px 20px;
   display: flex;
   flex-direction: column;
@@ -687,37 +743,39 @@ section h2 {
 }
 
 .rating-scale {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  align-items: stretch;
-  overflow-x: auto;
-  padding-bottom: 2px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
 }
 
-.rating-option {
-  min-width: 152px;
-  border: 1px solid #c7d5ea;
-  border-radius: 10px;
-  background: #f5f9ff;
-  padding: 10px 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  text-align: center;
+.rating-stars {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.star-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
   cursor: pointer;
+  font-size: 2.52rem;
+  line-height: 1;
+  color: #c9d6ea;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
-.rating-option input {
-  margin: 0;
+.star-btn:hover {
+  color: #ffd166;
+  transform: scale(1.04);
 }
 
-.mark-label {
-  color: #4f6483;
-  font-size: 0.9rem;
-  line-height: 1.25;
+.star-btn.is-selected {
+  color: #ffbf2f;
+}
+
+.rating-stars[data-disabled="1"] .star-btn {
+  cursor: default;
+  pointer-events: none;
 }
 
 .review-actions {
@@ -733,6 +791,22 @@ section h2 {
 .review-submit:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.review-complete-modal .modal-window {
+  text-align: center;
+}
+
+.review-complete-modal .modal-window p {
+  margin: 0;
+}
+
+.review-modal-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
 .review-stats-section {
@@ -838,12 +912,13 @@ section h2 {
     width: min(92%, 920px);
   }
 
-  .recommendation-head {
+  .jobs-header {
     flex-direction: column;
+    align-items: flex-start;
   }
 
-  .rating-option {
-    min-width: 136px;
+  .recommendation-head {
+    flex-direction: column;
   }
 
   .histogram-row {
@@ -855,6 +930,24 @@ section h2 {
   .content,
   .top-menu {
     width: min(96vw, 100%);
+  }
+
+  .site-header {
+    height: 92px;
+    padding: 6px 10px;
+  }
+
+  .header-brand {
+    gap: 8px;
+    max-height: 76px;
+  }
+
+  .header-brand-text {
+    font-size: clamp(0.88rem, 3.4vw, 1.05rem);
+  }
+
+  .site-logo {
+    width: min(52px, 18vw);
   }
 
   .filter-form {
@@ -933,11 +1026,15 @@ section h2 {
   }
 
   .review-question {
-    min-height: 260px;
+    min-height: 156px;
   }
 
   .review-question-title {
     margin-top: 10px;
+  }
+
+  .star-btn {
+    font-size: 2rem;
   }
 
   .multi-select {
